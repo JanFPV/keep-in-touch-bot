@@ -1,0 +1,9 @@
+services:
+  kitbot:
+    image: ghcr.io/janfpv/keep-in-touch-bot:latest
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

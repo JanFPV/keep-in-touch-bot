@@ -1,0 +1,64 @@
+Lista de tareas pendientes para KeepInTouchBot
+1. Integración y finalización del código principal
+
+Completar scheduler.py (ya tenemos base, revisar)
+
+Integrar actualización de last_ping_at en el scheduler (tras enviar mensaje)
+
+Revisar que el main.py registre correctamente todos los handlers
+
+    Revisar que storage.py esté completo y optimizado (índices, conexiones, funciones)
+
+2. Funciones y comandos
+
+Implementar todos los comandos definidos:
+/include, /exclude, /interval, /pause, /resume, /help, /about
+
+Añadir validaciones y mensajes claros para cada comando
+
+    Añadir persistencia y gestión correcta de la configuración por grupo
+
+3. Gestión de participantes
+
+Handler para actualizar participantes cuando entran o salen de grupos (listo, pero testear)
+
+Mecanismo para manejar usuarios sin username (usar nombre completo o ID)
+
+    Controlar cambios de username (actualizar en DB)
+
+4. Configuración y despliegue
+
+Preparar .env con todas las variables necesarias (BOT_TOKEN, INTERVAL_JITTER_PERCENT, etc)
+
+Crear y testear Dockerfile con dependencias y entorno
+
+Preparar docker-compose.yml para integración con volumen SQLite y variables de entorno
+
+    Configurar GitHub Actions para build + push automático a ghcr.io
+
+5. Logging y monitoreo
+
+Añadir logs claros en cada módulo (inicio, envío de mensajes, errores)
+
+Configurar nivel de logging configurable vía .env
+
+    Añadir manejo básico de excepciones en el scheduler para que no se detenga
+
+6. Tests y validaciones
+
+Crear tests unitarios para funciones de storage.py
+
+Probar comandos y flujo básico de bot en un grupo de test
+
+    Validar que el scheduler funciona bien y respeta intervalos aleatorios
+
+7. Mejoras adicionales (opcional)
+
+Mensajes configurables (plantillas)
+
+Soporte multi-idioma (i18n)
+
+Comando para mostrar la lista actual de usuarios incluidos/excluidos
+
+    Comando para que un usuario pueda autoexcluirse o auto-incluirse
+

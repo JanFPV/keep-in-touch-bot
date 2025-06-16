@@ -1,0 +1,11 @@
+services:
+  kitbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kitbot-local:dev
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
