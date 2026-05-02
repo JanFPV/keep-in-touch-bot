@@ -12,6 +12,7 @@ import storage
 load_dotenv()
 
 JITTER_PERCENT = float(os.getenv("INTERVAL_JITTER_PERCENT", 0.2))
+CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", 3600))
 
 
 def _days_to_seconds(days: float) -> int:
@@ -83,6 +84,12 @@ def start_scheduler(application):
                 schedule_next(scheduler, application, chat_id)
 
     # Periodic reconciliation to pick up newly registered groups.
-    scheduler.add_job(_rescheduler, "interval", minutes=10, id="rescheduler", replace_existing=True)
+    scheduler.add_job(
+        _rescheduler,
+        "interval",
+        seconds=CHECK_INTERVAL_SECONDS,
+        id="rescheduler",
+        replace_existing=True,
+    )
 
     application.bot_data["scheduler"] = scheduler
