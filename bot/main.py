@@ -32,6 +32,7 @@ async def on_startup(application):
     start_scheduler(application)
 
 async def handle_new_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    application = context.application
     chat = update.effective_chat
     if chat.type not in ("group", "supergroup"):
         return
@@ -64,6 +65,12 @@ async def handle_new_chat_members(update: Update, context: ContextTypes.DEFAULT_
             f"Use /help to see all available commands."
         )
     )
+
+    scheduler = application.bot_data.get("scheduler")
+    if scheduler:
+        from scheduler import schedule_next
+
+        schedule_next(scheduler, application, chat_id)
 
 async def handle_chat_member_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_member_update: ChatMemberUpdated = update.chat_member
@@ -98,8 +105,9 @@ def main():
     application.add_handler(CommandHandler("pause", pause_command))
     application.add_handler(CommandHandler("resume", resume_command))
 
-    # Group entry handler
+    # Group entry handlers
     application.add_handler(ChatMemberHandler(handle_chat_member_update, ChatMemberHandler.CHAT_MEMBER))
+    application.add_handler(ChatMemberHandler(handle_new_chat_members, ChatMemberHandler.MY_CHAT_MEMBER))
 
     application.run_polling()
 

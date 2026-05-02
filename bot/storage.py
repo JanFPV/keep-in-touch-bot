@@ -44,6 +44,24 @@ def register_group(chat_id: int, default_avg: int = 30):
         """, (chat_id, default_avg))
         conn.commit()
 
+
+def get_group(chat_id: int):
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute(
+            "SELECT chat_id, avg_days, is_active, last_ping_at FROM groups WHERE chat_id = ?",
+            (chat_id,),
+        )
+        row = c.fetchone()
+        if not row:
+            return None
+        return {
+            "chat_id": row[0],
+            "avg_days": row[1],
+            "is_active": row[2] == 1,
+            "last_ping_at": row[3],
+        }
+
 def set_avg_days(chat_id: int, days: int):
     with get_connection() as conn:
         c = conn.cursor()
