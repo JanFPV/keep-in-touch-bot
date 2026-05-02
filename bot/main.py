@@ -9,9 +9,9 @@ from telegram.ext import (
     ChatMemberHandler,
 )
 
-import storage
-from scheduler import start_scheduler
-from commands import (
+from bot import storage
+from bot.scheduler import start_scheduler
+from bot.commands import (
     help_command,
     about_command,
     include_command,
@@ -32,6 +32,7 @@ async def on_startup(application):
     start_scheduler(application)
 
 async def handle_new_chat_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    application = context.application
     chat = update.effective_chat
     if chat.type not in ("group", "supergroup"):
         return
@@ -65,6 +66,12 @@ async def handle_new_chat_members(update: Update, context: ContextTypes.DEFAULT_
         )
     )
 
+    scheduler = application.bot_data.get("scheduler")
+    if scheduler:
+        from scheduler import schedule_next
+
+        schedule_next(scheduler, application, chat_id)
+
 async def handle_chat_member_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_member_update: ChatMemberUpdated = update.chat_member
     chat = update.effective_chat
@@ -75,7 +82,10 @@ async def handle_chat_member_update(update: Update, context: ContextTypes.DEFAUL
     new_status = chat_member_update.new_chat_member.status
     user = chat_member_update.new_chat_member.user
 
-    # Solo interesan los usuarios que entran o vuelven a estar activos
+    # Register group if missing (e.g. bot restart)
+    default_avg = int(os.getenv("DEFAULT_AVG_DAYS", 30))
+    storage.register_group(chat.id, default_avg)
+
     if new_status in ["member", "administrator", "creator"]:
         storage.add_or_update_participant(chat.id, user.id, user.username or user.full_name, include=True)
 
@@ -95,8 +105,9 @@ def main():
     application.add_handler(CommandHandler("pause", pause_command))
     application.add_handler(CommandHandler("resume", resume_command))
 
-    # Group entry handler
+    # Group entry handlers
     application.add_handler(ChatMemberHandler(handle_chat_member_update, ChatMemberHandler.CHAT_MEMBER))
+    application.add_handler(ChatMemberHandler(handle_new_chat_members, ChatMemberHandler.MY_CHAT_MEMBER))
 
     application.run_polling()
 
