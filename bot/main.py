@@ -9,9 +9,9 @@ from telegram.ext import (
     ChatMemberHandler,
 )
 
-import storage
-from scheduler import start_scheduler
-from commands import (
+from bot import storage
+from bot.scheduler import start_scheduler
+from bot.commands import (
     help_command,
     about_command,
     include_command,

@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-import storage
+
+from bot import storage
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("""
@@ -39,7 +40,7 @@ async def interval_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     storage.set_avg_days(update.effective_chat.id, days)
     scheduler = context.application.bot_data.get("scheduler")
     if scheduler:
-        from scheduler import schedule_next
+        from bot.scheduler import schedule_next
 
         schedule_next(scheduler, context.application, update.effective_chat.id)
     await update.message.reply_text(f"⏱ Average interval set to {days} days.")
@@ -57,7 +58,7 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     storage.set_group_active(chat_id, True)
     scheduler = context.application.bot_data.get("scheduler")
     if scheduler:
-        from scheduler import schedule_next
+        from bot.scheduler import schedule_next
 
         schedule_next(scheduler, context.application, chat_id)
     await update.message.reply_text("Bot resumed. I’ll keep in touch again!")
@@ -72,7 +73,7 @@ async def include_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     storage.add_or_update_participant(chat_id, user.id, display_name, include=True)
     scheduler = context.application.bot_data.get("scheduler")
     if scheduler:
-        from scheduler import schedule_next
+        from bot.scheduler import schedule_next
 
         schedule_next(scheduler, context.application, chat_id)
     await update.message.reply_text(f"✅ @{display_name} is included.")
