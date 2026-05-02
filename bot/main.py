@@ -75,7 +75,10 @@ async def handle_chat_member_update(update: Update, context: ContextTypes.DEFAUL
     new_status = chat_member_update.new_chat_member.status
     user = chat_member_update.new_chat_member.user
 
-    # Solo interesan los usuarios que entran o vuelven a estar activos
+    # Register group if missing (e.g. bot restart)
+    default_avg = int(os.getenv("DEFAULT_AVG_DAYS", 30))
+    storage.register_group(chat.id, default_avg)
+
     if new_status in ["member", "administrator", "creator"]:
         storage.add_or_update_participant(chat.id, user.id, user.username or user.full_name, include=True)
 

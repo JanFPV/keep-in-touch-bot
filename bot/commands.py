@@ -7,11 +7,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🤖 *KeepInTouchBot* — Commands:
 
 /about — What is this bot?
-/interval <days> — Set average number of days between messages
-/pause — Pause the bot
-/resume — Resume the bot
-/include <@username> — Include user in message rotation
-/exclude <@username> — Exclude user from message rotation
+/interval <days> — Set average days between check-ins
+/pause — Pause check-ins for this group
+/resume — Resume check-ins for this group
+/include — Include yourself in rotation
+/exclude — Exclude yourself from rotation
 /help — Show this message
 """, parse_mode="Markdown")
 
@@ -37,49 +37,52 @@ async def interval_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     storage.set_avg_days(update.effective_chat.id, days)
+    scheduler = context.application.bot_data.get("scheduler")
+    if scheduler:
+        from scheduler import schedule_next
+
+        schedule_next(scheduler, context.application, update.effective_chat.id)
     await update.message.reply_text(f"⏱ Average interval set to {days} days.")
 
 async def pause_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     storage.set_group_active(chat_id, False)
+    scheduler = context.application.bot_data.get("scheduler")
+    if scheduler:
+        scheduler.remove_job(f"checkin:{chat_id}")
     await update.message.reply_text("Bot paused. I won’t ping anyone until resumed.")
 
 async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     storage.set_group_active(chat_id, True)
+    scheduler = context.application.bot_data.get("scheduler")
+    if scheduler:
+        from scheduler import schedule_next
+
+        schedule_next(scheduler, context.application, chat_id)
     await update.message.reply_text("Bot resumed. I’ll keep in touch again!")
 
 async def include_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    if not context.args or not context.args[0].startswith("@"):
-        await update.message.reply_text("Usage: /include @username")
+    user = update.effective_user
+    if not user:
         return
 
-    username = context.args[0][1:]
+    display_name = user.username or user.full_name
+    storage.add_or_update_participant(chat_id, user.id, display_name, include=True)
+    scheduler = context.application.bot_data.get("scheduler")
+    if scheduler:
+        from scheduler import schedule_next
 
-    # Find by username (we only store username, so we don’t have user ID here)
-    participants = storage.get_included_participants(chat_id) + storage.get_excluded_participants(chat_id)
-    for p in participants:
-        if p["username"].lower() == username.lower():
-            storage.set_participant_included(chat_id, p["id"], True)
-            await update.message.reply_text(f"✅ @{username} has been included.")
-            return
-
-    await update.message.reply_text(f"⚠️ User @{username} not found in group database.")
+        schedule_next(scheduler, context.application, chat_id)
+    await update.message.reply_text(f"✅ @{display_name} is included.")
 
 async def exclude_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    if not context.args or not context.args[0].startswith("@"):
-        await update.message.reply_text("Usage: /exclude @username")
+    user = update.effective_user
+    if not user:
         return
 
-    username = context.args[0][1:]
-
-    participants = storage.get_included_participants(chat_id) + storage.get_excluded_participants(chat_id)
-    for p in participants:
-        if p["username"].lower() == username.lower():
-            storage.set_participant_included(chat_id, p["id"], False)
-            await update.message.reply_text(f"🚫 @{username} has been excluded.")
-            return
-
-    await update.message.reply_text(f"⚠️ User @{username} not found in group database.")
+    display_name = user.username or user.full_name
+    storage.add_or_update_participant(chat_id, user.id, display_name, include=False)
+    await update.message.reply_text(f"🚫 @{display_name} is excluded.")
