@@ -3,6 +3,7 @@ import os
 import random
 from datetime import datetime, timedelta
 
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ load_dotenv()
 
 JITTER_PERCENT = float(os.getenv("INTERVAL_JITTER_PERCENT", 0.2))
 CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", 3600))
+SCHEDULER_DB_PATH = os.getenv("SCHEDULER_DB_PATH", "data/scheduler.sqlite")
 
 
 def _days_to_seconds(days: float) -> int:
@@ -69,7 +71,10 @@ def schedule_next(scheduler: AsyncIOScheduler, application, chat_id: int):
 
 
 def start_scheduler(application):
-    scheduler = AsyncIOScheduler(timezone="UTC")
+    scheduler = AsyncIOScheduler(
+        timezone="UTC",
+        jobstores={"default": SQLAlchemyJobStore(url=f"sqlite:///{SCHEDULER_DB_PATH}")},
+    )
     scheduler.start()
 
     # Ensure all active groups have exactly one scheduled job.
